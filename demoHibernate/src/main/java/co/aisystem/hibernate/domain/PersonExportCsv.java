@@ -1,120 +1,96 @@
 package co.aisystem.hibernate.domain;
 
-
 import co.aisystem.hibernate.domain.specyfication.PersonCriteria;
 import co.aisystem.hibernate.domain.specyfication.PersonSpecification;
 import co.aisystem.hibernate.service.PersonExportService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import io.vavr.collection.Stream;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
-import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.persistence.metamodel.Attribute;
 import javax.validation.constraints.NotNull;
+import java.text.DateFormat;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Predicate;
+import java.util.stream.Stream;
 
-import static co.aisystem.hibernate.domain.Person_.date;
-import static co.aisystem.hibernate.domain.Person_.id;
-import static co.aisystem.hibernate.domain.Person_.name;
-import static co.aisystem.hibernate.domain.Person_.surname;
+import static co.aisystem.hibernate.domain.Person_.*;
 import static com.fasterxml.jackson.core.JsonGenerator.Feature.IGNORE_UNKNOWN;
+import static com.fasterxml.jackson.dataformat.csv.CsvSchema.ColumnType.BOOLEAN;
 import static com.fasterxml.jackson.dataformat.csv.CsvSchema.ColumnType.NUMBER;
 import static com.fasterxml.jackson.dataformat.csv.CsvSchema.ColumnType.STRING;
-import static io.vavr.API.$;
-import static io.vavr.API.Case;
-import static io.vavr.API.Match;
+import static io.vavr.API.*;
+import static io.vavr.collection.List.ofAll;
 import static java.util.Arrays.asList;
+import static java.util.Objects.nonNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
+import static org.springframework.context.annotation.ScopedProxyMode.TARGET_CLASS;
+import static org.springframework.util.CollectionUtils.isEmpty;
+import static org.springframework.web.context.WebApplicationContext.SCOPE_SESSION;
 
 @Repository
 //@Scope(value = SCOPE_PROTOTYPE)
-@Scope(value = "session", proxyMode = ScopedProxyMode.TARGET_CLASS)
+@Scope(value = SCOPE_SESSION, proxyMode = TARGET_CLASS)
 @Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PersonExportCsv implements PersonExportService {
 
-    //    private final JpaContext jpaContext;
-//    private EntityManager em;
-//    private final EntityManager em;
-//    private final   EntityManagerFactory emf;
+    private static final int PAGE_SIZE = 10;
+    private static final char DELIMITER = ';';
+    private static final Set<Attribute> attributes = Stream.of(id, name, surname, date, status, nip, firstVisit).collect(toSet());
+    private static final Set<String> setAttrNames = attributes.stream().map(Attribute::getName).collect(toSet());
+
+    private final EntityManager em;
     private final PersonRepository personRepository;
     private ObjectWriter objectWriter;
-
-    private static final Stream<Attribute> attributes = Stream.of(id, name, surname, date);
-
-//    @PersistenceContext
-//    public void setEntityManager(EntityManager entityManager) {
-//        this.em = entityManager;
-//    }
+    private CsvSchema.Builder schemaBuilder;
 
     @Override
     @Async
     public CompletableFuture<String> exportMemberToCsv(PersonCriteria criteria, List<String> columnFields) {
 
-        buildCsvSchemaForMemberAttributes(columnFields);
-//        EntityManager em = null;
-//        em = emf.createEntityManager();
-//        EntityManager em =  jpaContext.getEntityManagerByManagedType(Person.class);
-        int page = 0;
+        objectWriter = buildCsvSchemaForMemberAttributes(columnFields);
         StringBuilder sb = new StringBuilder();
-        Slice<Person> membersPage;
-        Optional<Specification<Person>> filtersSpec = PersonSpecification.tryBuild();
-        Specification<Person> personSpecification = filtersSpec.orElse(null);
+        Pageable page = null;
+        Specification<Person> personSpecification = PersonSpecification
+                .build(criteria)
+                .orElse(null);
 
-        String csv = personRepository.findAll(personSpecification)
-                .stream()
-                .map(this::exportMemberToCsv)
-                .collect(joining());
-//        do {
-//            membersPage = nextPageMembersByFilterSpec(personSpecification, page);
-//            sb.append(
-//                    membersPage.getContent()
-//                            .stream()
-//                            .map(this::exportMemberToCsv)
-//                            .collect(joining())
-//            );
-//            em.clear();
-//        } while (membersPage.hasNext());
+        Page<Person> membersPage;
+        do {
+            page = nonNull(page) ? page.next() : PageRequest.of(0, PAGE_SIZE).first();
+            membersPage = nextPageMembersByFilterSpec(personSpecification, page);
+            sb.append(
+                    membersPage.getContent()
+                            .stream()
+                            .map(this::memberToCsvRow)
+                            .collect(joining())
+            );
+            em.clear();
+        } while (membersPage.hasNext());
 
-//        return completedFuture(sb.toString());
-        return completedFuture(csv);
+        return completedFuture(sb.toString());
     }
 
-//    private EntityManager getEntityManager() {
-//        EntityManagerFactory factory = null;
-//        EntityManager entityManager = null;
-//
-//        try {
-//            factory = Persistence.createEntityManagerFactory("exportControl");
-//            entityManager = factory.createEntityManager();
-//        } finally {
-//            factory.close();
-//        }
-//
-//        return entityManager;
-//    }
-
-
-    private String exportMemberToCsv(Person p) {
+    private String memberToCsvRow(Person p) {
         try {
             return objectWriter.writeValueAsString(p);
         } catch (JsonProcessingException e) {
@@ -122,46 +98,68 @@ public class PersonExportCsv implements PersonExportService {
         }
     }
 
-    private Page<Person> nextPageMembersByFilterSpec(Specification<Person> searchSpecifications, int page) {
-        return personRepository.findAll(searchSpecifications, PageRequest.of(page, 10));
+    private Page<Person> nextPageMembersByFilterSpec(Specification<Person> searchSpecifications, Pageable page) {
+        return personRepository.findAll(searchSpecifications, page);
     }
 
-    private void buildCsvSchemaForMemberAttributes(List<String> fields) {
-
-        if (fields != null) {
-            log.debug("buildCsvSchema for fields: {}", fields.stream().collect(joining(", ")));
+    private ObjectWriter buildCsvSchemaForMemberAttributes(List<String> fields) {
+        schemaBuilder = new CsvSchema.Builder();
+        Stream<String> stream;
+        if (isEmpty(fields)) {
+            log.debug("buildCsvSchema for ALL fields: {}", attributes.stream().map(Attribute::getName)
+                    .collect(joining(", ")));
+            stream = attributes.stream().map(Attribute::getName);
         } else {
-            log.debug("buildCsvSchema for ALL fields: {}", attributes.map(Attribute::getName).collect(joining(", ")));
+            log.debug("trying buildCsvSchema for fields: {}", fields.stream()
+                    .collect(joining(", ")));
+            stream = fields.stream().filter(setAttrNames::contains);
         }
 
-        CsvSchema.Builder schema = new CsvSchema.Builder();
-        schema.setColumnSeparator(';');
-        Predicate<Attribute> isNull = fields == null ? a -> true : a -> false;
-        Predicate<Attribute> getContains = a -> fields.contains(a.getName());
-        attributes
-                .filter(isNull.or(getContains))
-                .map(Attribute::getName)
-                .forEach(a -> schema.addColumn(a, getColumnType(a)));
-        log.debug(">>>schema size > 0: {}: ", schema.getColumns().hasNext());
-        schema.getColumns().forEachRemaining(s -> log.debug(">>>schema: {}", s.getName()));
+        stream.distinct()
+                .peek(a -> log.debug("for attr: {}", a))
+                .forEach(this::addColumnToCsvSchema);
+        schemaBuilder.setColumnSeparator(DELIMITER)
+                .setNullValue(" - ");
 
-        objectWriter = new CsvMapper()
+        CsvSchema schema = schemaBuilder.build();
+
+        log.debug("schema size: {}", schema.size());
+        return new CsvMapper()
+                .registerModule(new JavaTimeModule())
+                .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
                 .writerFor(Person.class)
-                .with(schema.build())
-                .with(IGNORE_UNKNOWN);
+                .with(schema)
+                .with(IGNORE_UNKNOWN)
+                .with(DateFormat.getDateTimeInstance());
+    }
+
+    private CsvSchema.Builder addColumnToCsvSchema(String a) {
+        if("nip".equals(a)){
+            return schemaBuilder.addColumn("nip.nip", STRING);
+        }else {
+
+            return schemaBuilder.addColumn(a, getColumnType(a));
+        }
     }
 
     @NotNull
     private CsvSchema.ColumnType getColumnType(String columnField) {
         return Match(columnField).of(
                 Case($(this::isNumberType), NUMBER),
+                Case($(this::isBooleanType), BOOLEAN),
                 Case($(), STRING)
         );
     }
 
     private boolean isNumberType(String column) {
-        return attributes
+        return ofAll(attributes)
                 .filter(a -> a.getName().equalsIgnoreCase(column))
                 .exists(a -> asList(Integer.class, Long.class).contains(a.getJavaType()));
+    }
+
+    private boolean isBooleanType(String column) {
+        return ofAll(attributes)
+                .filter(a -> a.getName().equalsIgnoreCase(column))
+                .exists(a -> Boolean.class.equals(a.getJavaType()));
     }
 }

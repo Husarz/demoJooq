@@ -1,14 +1,13 @@
 package co.aisystem.hibernate.domain;
 
+import co.aisystem.hibernate.domain.types.Nip;
+import co.aisystem.hibernate.domain.types.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
@@ -24,6 +23,17 @@ public class Person {
 
     private String name;
     private String surname;
+
+    @Enumerated(EnumType.STRING)
+    private Status status;
+
+//    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDateTime date;
+
+    private Boolean firstVisit;
+
+    @Embedded
+    @Column(unique = true)
+    private Nip nip;
 }
 
