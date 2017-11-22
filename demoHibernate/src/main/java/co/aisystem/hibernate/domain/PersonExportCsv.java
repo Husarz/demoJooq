@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static co.aisystem.hibernate.domain.Person_.date;
@@ -53,7 +54,7 @@ import static org.springframework.web.context.WebApplicationContext.SCOPE_SESSIO
 @Transactional(readOnly = true)
 public class PersonExportCsv implements PersonExportService {
 
-    private static final int PAGE_SIZE = 10;
+    private static final int PAGE_SIZE = 50;
     private static final String DELIMITER = ";";
     private static final Set<SingularAttribute<Person, ?>> attributes = Stream.of(id, name, surname, date, status, nip, firstVisit).collect(toSet());
 
@@ -61,6 +62,45 @@ public class PersonExportCsv implements PersonExportService {
     private final PersonRepository personRepository;
     private List<SingularAttribute<Person, ?>> streamFiltered;
 
+    public CompletableFuture<Integer> performPageableActionOnPerson(PersonCriteria criteria, Consumer<Person> actionOnPerson) {
+        Pageable page = null;
+        int rows = 0;
+        Specification<Person> personSpecification = PersonSpecification
+                .build(criteria)
+                .orElse(null);
+
+        Page<Person> membersPage;
+        do {
+            page = nonNull(page) ? page.next() : PageRequest.of(0, PAGE_SIZE).first();
+            membersPage = nextPageMembersByFilterSpec(personSpecification, page);
+            rows += membersPage.getContent()
+                    .stream()
+                    .peek(actionOnPerson)
+                    .mapToInt(p -> 1)
+                    .sum();
+            em.clear();
+        } while (membersPage.hasNext());
+        return completedFuture(rows);
+    }
+
+    @Override
+    @Async
+    public CompletableFuture<String> exportActionMemberToCsv(PersonCriteria criteria, List<String> columnFields) {
+        StringBuilder sb = new StringBuilder();
+
+        buildCsvSchemaOperationForMemberAttributes(columnFields);
+
+        sb.append(insertHeaderCsv());
+        sb.append(lineSeparator());
+
+        return performPageableActionOnPerson(criteria, p -> exportToCsvRow(sb, p))
+                .thenApply(result -> sb.toString());
+    }
+
+    private StringBuilder exportToCsvRow(StringBuilder sb, Person p) {
+        return sb.append(memberToCsvRow(p))
+                .append(lineSeparator());
+    }
 
     @Override
     @Async
@@ -74,7 +114,7 @@ public class PersonExportCsv implements PersonExportService {
                 .orElse(null);
 
         Page<Person> membersPage;
-        insertHeaderCsv(sb);
+        sb.append(insertHeaderCsv());
         do {
             page = nonNull(page) ? page.next() : PageRequest.of(0, PAGE_SIZE).first();
             sb.append(lineSeparator());
@@ -91,11 +131,10 @@ public class PersonExportCsv implements PersonExportService {
         return completedFuture(sb.toString());
     }
 
-    private void insertHeaderCsv(StringBuilder sb) {
-        sb.append(
-                streamFiltered.stream()
-                        .map(Attribute::getName)
-                        .collect(joining(DELIMITER)));
+    private String insertHeaderCsv() {
+        return streamFiltered.stream()
+                .map(Attribute::getName)
+                .collect(joining(DELIMITER));
     }
 
     private String memberToCsvRow(Person p) {
@@ -127,25 +166,18 @@ public class PersonExportCsv implements PersonExportService {
                 .orElse(null);
     }
 
-    @SuppressWarnings("unchecked")
-    <FieldType> FieldType getValue(Person entity, SingularAttribute<Person, FieldType> field) {
+    private Object getValue(Person entity, SingularAttribute<Person, ?> field) {
         try {
+            if (field == nip) {
+                return getNip(entity);
+            }
+
             Member member = field.getJavaMember();
-//            return (FieldType) Match(member).of(
-////                    Case($(instanceOf(Method.class)), ((Method) member).invoke(entity)),
-//                    Case($(this::isNip), getNip(entity)),
-//                    Case($(instanceOf(Field.class)), ((Field) member).get(entity)),
-//                    Case($(), o -> run(() -> {
-//                        throw new IllegalArgumentException("Unexpected java member type.");
-//                    }))
-//            );
 
             if (member instanceof Method) {
-                return (FieldType) ((Method) member).invoke(entity);
-            } else if (field == nip){
-                return (FieldType) getNip(entity);
-            }  else if (member instanceof Field) {
-                return (FieldType) ((Field) member).get(entity);
+                return ((Method) member).invoke(entity);
+            } else if (member instanceof Field) {
+                return ((Field) member).get(entity);
             } else {
                 throw new IllegalArgumentException("Unexpected java member type. Expecting method or field, found: " + member);
             }
@@ -161,6 +193,6 @@ public class PersonExportCsv implements PersonExportService {
     private String getNip(Person entity) {
         return ofNullable(entity.getNip())
                 .map(Nip::getNip)
-                .orElse(" ");
+                .orElse(null);
     }
 }

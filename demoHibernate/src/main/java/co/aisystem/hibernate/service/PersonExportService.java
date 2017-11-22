@@ -6,5 +6,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface PersonExportService {
+    CompletableFuture<String> exportActionMemberToCsv(PersonCriteria criteria, List<String> columnFields);
+
     CompletableFuture<String> exportMemberToCsv(PersonCriteria criteria, List<String> columnFields);
 }

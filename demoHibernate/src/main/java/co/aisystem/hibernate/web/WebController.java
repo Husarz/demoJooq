@@ -38,7 +38,7 @@ public class WebController {
 //        List<String> fields  = io.vavr.collection.List.of(surname, name)
 //                .map(Attribute::getName)
 //                .asJava();
-        return service.exportMemberToCsv(personC, fields);
+        return service.exportActionMemberToCsv(personC, fields);
 //                .exceptionally(this::handleException)
 //                .thenApply(f -> f)
     }
