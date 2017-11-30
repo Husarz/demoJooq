@@ -14,3 +14,18 @@ ALTER TABLE person
 
 ALTER TABLE person
   ADD COLUMN nip TEXT;
+
+CREATE OR REPLACE FUNCTION demographic_table_range()
+  RETURNS TABLE(range INT4RANGE)
+AS $$ SELECT *
+      FROM (VALUES ('(0,24]' :: INT4RANGE),
+        ('[25,30]' :: INT4RANGE),
+        ('[31,34]' :: INT4RANGE),
+        ('[35,40]' :: INT4RANGE),
+        ('[41,50]' :: INT4RANGE),
+        ('[51,)' :: INT4RANGE)) AS r(v)
+$$ LANGUAGE SQL STABLE;
+COMMENT ON FUNCTION demographic_table_range()
+IS 'Zwraca tabelę przedzialów dla ustalonych grup wiekowych';
+
+
