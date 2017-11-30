@@ -6,6 +6,7 @@ package co.aisystem.demoJooq.api.db.tables;
 
 import co.aisystem.demoJooq.api.db.Public;
 import co.aisystem.demoJooq.api.db.tables.records.DemographicTableRangeRecord;
+import co.aisystem.demoJooq.converters.PostgresInt4RangeBinding;
 
 import org.jooq.Field;
 import org.jooq.Name;
@@ -14,6 +15,7 @@ import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.impl.DSL;
 import org.jooq.impl.TableImpl;
+import org.jooq.lambda.tuple.Range;
 
 
 /**
@@ -22,7 +24,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class DemographicTableRange extends TableImpl<DemographicTableRangeRecord> {
 
-    private static final long serialVersionUID = -903718686;
+    private static final long serialVersionUID = -342529178;
 
     /**
      * The reference instance of <code>public.demographic_table_range</code>
@@ -38,10 +40,9 @@ public class DemographicTableRange extends TableImpl<DemographicTableRangeRecord
     }
 
     /**
-     * @deprecated Unknown data type. Please define an explicit {@link org.jooq.Binding} to specify how this type should be handled.
+     * The column <code>public.demographic_table_range.range</code>.
      */
-    @java.lang.Deprecated
-    public final TableField<DemographicTableRangeRecord, Object> RANGE = createField("range", org.jooq.impl.DefaultDataType.getDefaultDataType("int4range"), this, "");
+    public final TableField<DemographicTableRangeRecord, Range<Integer>> RANGE = createField("range", org.jooq.impl.DefaultDataType.getDefaultDataType("int4range"), this, "", new PostgresInt4RangeBinding());
 
     /**
      * Create a <code>public.demographic_table_range</code> table reference

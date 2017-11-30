@@ -6,9 +6,9 @@
 	<groupId>co.aisystem</groupId>
 	<artifactId>demoJooq</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-    <modules>
-        <module>demoHibernate</module>
-    </modules>
+    <!--<modules>-->
+        <!--<module>demoHibernate</module>-->
+    <!--</modules>-->
     <packaging>pom</packaging>
 
 	<name>demoJooq</name>
@@ -184,6 +184,12 @@
 									<!-- Associate that custom type with your binding. -->
 									<binding> co.aisystem.demoJooq.converters.PostgresJSONGsonBinding</binding>
 								</customType>
+
+								<customType>
+									<name>Int4Range</name>
+									<type>org.jooq.lambda.tuple.Range&lt;Integer></type>
+									<binding> co.aisystem.demoJooq.converters.PostgresInt4RangeBinding</binding>
+								</customType>
 							</customTypes>
 
 							<!-- Then, associate custom types with database columns -->
@@ -211,6 +217,13 @@
                                          If provided, both "expressions" and "types" must match. -->
 									<types>.*</types>
 								</forcedType>
+								<forcedType>
+									<name>Int4Range</name>
+									<!--<expression>.*?_RANGE</expression>-->
+									<!--&lt;!&ndash;<expression>.*Int4Range.*</expression>&ndash;&gt;-->
+									<types>Int4Range</types>
+								</forcedType>
+
 							</forcedTypes>
 
 

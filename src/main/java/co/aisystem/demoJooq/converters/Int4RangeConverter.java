@@ -40,6 +40,6 @@ public class Int4RangeConverter implements Converter<Object, Range<Integer>> {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public Class<Range<Integer>> toType() {
-        return (Class) Range.class;
+        return (Class<Range<Integer>>) Range.class.getComponentType();
     }
 }
