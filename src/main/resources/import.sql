@@ -14,10 +14,10 @@ ALTER TABLE person
 
 ALTER TABLE person
   ADD COLUMN nip TEXT;
-
+DROP FUNCTION demographic_table_range();
 CREATE OR REPLACE FUNCTION demographic_table_range()
-  RETURNS TABLE(range INT4RANGE)
-AS $$ SELECT *
+  RETURNS INT4RANGE
+AS $$ SELECT r.v
       FROM (VALUES ('(0,24]' :: INT4RANGE),
         ('[25,30]' :: INT4RANGE),
         ('[31,34]' :: INT4RANGE),

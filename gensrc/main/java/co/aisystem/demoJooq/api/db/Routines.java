@@ -10,6 +10,7 @@ import co.aisystem.demoJooq.api.db.routines.Crypt;
 import co.aisystem.demoJooq.api.db.routines.Dearmor;
 import co.aisystem.demoJooq.api.db.routines.Decrypt;
 import co.aisystem.demoJooq.api.db.routines.DecryptIv;
+import co.aisystem.demoJooq.api.db.routines.DemographicTableRange;
 import co.aisystem.demoJooq.api.db.routines.Digest1;
 import co.aisystem.demoJooq.api.db.routines.Digest2;
 import co.aisystem.demoJooq.api.db.routines.Encrypt;
@@ -39,9 +40,7 @@ import co.aisystem.demoJooq.api.db.routines.PgpSymEncrypt1;
 import co.aisystem.demoJooq.api.db.routines.PgpSymEncrypt2;
 import co.aisystem.demoJooq.api.db.routines.PgpSymEncryptBytea1;
 import co.aisystem.demoJooq.api.db.routines.PgpSymEncryptBytea2;
-import co.aisystem.demoJooq.api.db.tables.DemographicTableRange;
 import co.aisystem.demoJooq.api.db.tables.PgpArmorHeaders;
-import co.aisystem.demoJooq.api.db.tables.records.DemographicTableRangeRecord;
 import co.aisystem.demoJooq.api.db.tables.records.PgpArmorHeadersRecord;
 
 import java.util.UUID;
@@ -50,6 +49,7 @@ import org.jooq.Configuration;
 import org.jooq.Field;
 import org.jooq.Result;
 import org.jooq.impl.DSL;
+import org.jooq.lambda.tuple.Range;
 
 
 /**
@@ -264,6 +264,25 @@ public class Routines {
         f.set__2(__2);
         f.set__3(__3);
         f.set__4(__4);
+
+        return f.asField();
+    }
+
+    /**
+     * Call <code>public.demographic_table_range</code>
+     */
+    public static Range<Integer> demographicTableRange(Configuration configuration) {
+        DemographicTableRange f = new DemographicTableRange();
+
+        f.execute(configuration);
+        return f.getReturnValue();
+    }
+
+    /**
+     * Get <code>public.demographic_table_range</code> as a field.
+     */
+    public static Field<Range<Integer>> demographicTableRange() {
+        DemographicTableRange f = new DemographicTableRange();
 
         return f.asField();
     }
@@ -1279,20 +1298,6 @@ public class Routines {
         f.set__3(__3);
 
         return f.asField();
-    }
-
-    /**
-     * Call <code>public.demographic_table_range</code>.
-     */
-    public static Result<DemographicTableRangeRecord> demographicTableRange(Configuration configuration) {
-        return DSL.using(configuration).selectFrom(co.aisystem.demoJooq.api.db.tables.DemographicTableRange.DEMOGRAPHIC_TABLE_RANGE.call()).fetch();
-    }
-
-    /**
-     * Get <code>public.demographic_table_range</code> as a table.
-     */
-    public static DemographicTableRange demographicTableRange() {
-        return co.aisystem.demoJooq.api.db.tables.DemographicTableRange.DEMOGRAPHIC_TABLE_RANGE.call();
     }
 
     /**

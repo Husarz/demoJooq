@@ -4,11 +4,9 @@
 package co.aisystem.demoJooq.api.db;
 
 
-import co.aisystem.demoJooq.api.db.tables.DemographicTableRange;
 import co.aisystem.demoJooq.api.db.tables.EfitnessMemberMapping;
 import co.aisystem.demoJooq.api.db.tables.Person;
 import co.aisystem.demoJooq.api.db.tables.PgpArmorHeaders;
-import co.aisystem.demoJooq.api.db.tables.records.DemographicTableRangeRecord;
 import co.aisystem.demoJooq.api.db.tables.records.PgpArmorHeadersRecord;
 
 import java.util.ArrayList;
@@ -30,31 +28,12 @@ import org.jooq.impl.SchemaImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Public extends SchemaImpl {
 
-    private static final long serialVersionUID = -49034286;
+    private static final long serialVersionUID = 1890433022;
 
     /**
      * The reference instance of <code>public</code>
      */
     public static final Public PUBLIC = new Public();
-
-    /**
-     * The table <code>public.demographic_table_range</code>.
-     */
-    public final DemographicTableRange DEMOGRAPHIC_TABLE_RANGE = co.aisystem.demoJooq.api.db.tables.DemographicTableRange.DEMOGRAPHIC_TABLE_RANGE;
-
-    /**
-     * Call <code>public.demographic_table_range</code>.
-     */
-    public static Result<DemographicTableRangeRecord> DEMOGRAPHIC_TABLE_RANGE(Configuration configuration) {
-        return DSL.using(configuration).selectFrom(co.aisystem.demoJooq.api.db.tables.DemographicTableRange.DEMOGRAPHIC_TABLE_RANGE.call()).fetch();
-    }
-
-    /**
-     * Get <code>public.demographic_table_range</code> as a table.
-     */
-    public static DemographicTableRange DEMOGRAPHIC_TABLE_RANGE() {
-        return co.aisystem.demoJooq.api.db.tables.DemographicTableRange.DEMOGRAPHIC_TABLE_RANGE.call();
-    }
 
     /**
      * The table <code>public.efitness_member_mapping</code>.
@@ -117,7 +96,6 @@ public class Public extends SchemaImpl {
 
     private final List<Table<?>> getTables0() {
         return Arrays.<Table<?>>asList(
-            DemographicTableRange.DEMOGRAPHIC_TABLE_RANGE,
             EfitnessMemberMapping.EFITNESS_MEMBER_MAPPING,
             Person.PERSON,
             PgpArmorHeaders.PGP_ARMOR_HEADERS);

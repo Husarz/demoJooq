@@ -4,11 +4,9 @@
 package co.aisystem.demoJooq.api.db;
 
 
-import co.aisystem.demoJooq.api.db.tables.DemographicTableRange;
 import co.aisystem.demoJooq.api.db.tables.EfitnessMemberMapping;
 import co.aisystem.demoJooq.api.db.tables.Person;
 import co.aisystem.demoJooq.api.db.tables.PgpArmorHeaders;
-import co.aisystem.demoJooq.api.db.tables.records.DemographicTableRangeRecord;
 import co.aisystem.demoJooq.api.db.tables.records.PgpArmorHeadersRecord;
 
 import org.jooq.Configuration;
@@ -22,25 +20,6 @@ import org.jooq.impl.DSL;
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Tables {
-
-    /**
-     * The table <code>public.demographic_table_range</code>.
-     */
-    public static final DemographicTableRange DEMOGRAPHIC_TABLE_RANGE = co.aisystem.demoJooq.api.db.tables.DemographicTableRange.DEMOGRAPHIC_TABLE_RANGE;
-
-    /**
-     * Call <code>public.demographic_table_range</code>.
-     */
-    public static Result<DemographicTableRangeRecord> DEMOGRAPHIC_TABLE_RANGE(Configuration configuration) {
-        return DSL.using(configuration).selectFrom(co.aisystem.demoJooq.api.db.tables.DemographicTableRange.DEMOGRAPHIC_TABLE_RANGE.call()).fetch();
-    }
-
-    /**
-     * Get <code>public.demographic_table_range</code> as a table.
-     */
-    public static DemographicTableRange DEMOGRAPHIC_TABLE_RANGE() {
-        return co.aisystem.demoJooq.api.db.tables.DemographicTableRange.DEMOGRAPHIC_TABLE_RANGE.call();
-    }
 
     /**
      * The table <code>public.efitness_member_mapping</code>.
