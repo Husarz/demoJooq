@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS person;
+
 CREATE TABLE person (
   id      BIGSERIAL PRIMARY KEY,
   name    TEXT        NOT NULL,
@@ -5,16 +7,15 @@ CREATE TABLE person (
   date    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-
 ALTER TABLE person
   ADD COLUMN status TEXT DEFAULT 'DISABLED' NOT NULL;
 
 ALTER TABLE person
-    ADD COLUMN first_visit BOOLEAN DEFAULT FALSE NOT NULL;
+  ADD COLUMN first_visit BOOLEAN DEFAULT FALSE NOT NULL;
 
 ALTER TABLE person
   ADD COLUMN nip TEXT;
-DROP FUNCTION demographic_table_range();
+DROP FUNCTION IF EXISTS demographic_table_range();
 CREATE OR REPLACE FUNCTION demographic_table_range()
   RETURNS INT4RANGE
 AS $$ SELECT r.v
